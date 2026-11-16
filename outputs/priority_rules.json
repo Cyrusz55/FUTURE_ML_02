@@ -1,0 +1,70 @@
+{
+  "rules_version": 3,
+  "rules": [
+    [
+      "explicit urgency",
+      3,
+      "\\b(urgent\\w*|asap|immediate\\w*|emergency|critical|deadline)\\b"
+    ],
+    [
+      "service failure",
+      3,
+      "\\b(outage|down|crash\\w*|fail\\w*|freez\\w*|frozen|corrupt\\w*|dead)\\b"
+    ],
+    [
+      "device or feature not working",
+      2,
+      "\\b(broken|not working|stopped working|no longer working)\\b"
+    ],
+    [
+      "security or data risk",
+      3,
+      "\\b(security|breach\\w*|virus|malware|phishing|hack\\w*|ransomware|leak\\w*|stolen|suspicious|data loss)\\b"
+    ],
+    [
+      "blocked from working",
+      2,
+      "\\b(unable|cannot|blocked|locked|lockout|denied|deny|unavailable|stuck|cant)\\b|\\bcan t\\b"
+    ],
+    [
+      "wide impact",
+      2,
+      "\\b(everyone|everybody|all users|all staff|whole team|entire team|entire office|multiple users|company wide|team wide)\\b"
+    ],
+    [
+      "sender marked high importance",
+      1,
+      "\\bimportance high\\b"
+    ],
+    [
+      "degraded service",
+      1,
+      "\\b(slow\\w*|lag\\w*|intermittent\\w*|delay\\w*|sometimes|error\\w*)\\b"
+    ],
+    [
+      "routine request",
+      -2,
+      "\\b(how to|how do|question|inquiry|new starter|upgrade|quote|would like|wondering|recommend\\w*)\\b"
+    ],
+    [
+      "scheduled or planned",
+      -3,
+      "\\b(scheduled|planned)\\b"
+    ],
+    [
+      "maintenance notice",
+      -4,
+      "\\bmaintenance\\b"
+    ]
+  ],
+  "category_weight_hints": {
+    "access": 1,
+    "administrative": 1,
+    "hardware": 1,
+    "storage": 1,
+    "purchase": -1,
+    "miscellaneous": -1
+  },
+  "high_at": 4,
+  "medium_at": 2
+}

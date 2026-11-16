@@ -1,0 +1,10 @@
+.venv
+.env
+model/
+outputs/category_model.joblib
+raw_data/clean/
+raw_data/all_tickets_processed_improved_v3.csv
+__pycache__
+.pytest_cache
+.ruff_cache
+.ipynb_checkpoints

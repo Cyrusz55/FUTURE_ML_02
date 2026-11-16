@@ -1,0 +1,9 @@
+How to review the tickets
+
+Read only the ticket text. Do not think about the category.
+
+High: work is stopped or at serious risk right now, many people are affected, there is a security or data risk, or the sender gives a real urgent deadline. A response is needed within hours.
+Medium: one person or a small group is blocked, or something important is failing, but work can continue in some way and nothing is on fire. A response is needed the same or the next working day.
+Low: a request, a question, an access setup, a new starter or a routine change. Nothing is broken or blocked. The normal queue is fine.
+
+When you are unsure, pick the level you would defend to a support manager, and add a short note.

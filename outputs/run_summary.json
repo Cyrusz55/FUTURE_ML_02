@@ -1,0 +1,66 @@
+{
+  "rows": 47837,
+  "categories": 8,
+  "model": "LinearSVC",
+  "best_params": {
+    "model__C": 0.3
+  },
+  "stop_words_choice": "standard English stop words",
+  "cv_macro_f1_best": 0.8492699691643084,
+  "test_accuracy": 0.8555602006688964,
+  "test_macro_f1": 0.8575249566918995,
+  "majority_class_accuracy": 0.28465413801032674,
+  "chance_macro_f1": 0.125,
+  "temperature": 0.2777618206173267,
+  "expected_calibration_error_raw": 0.3716117529354654,
+  "expected_calibration_error_scaled": 0.025620898287164524,
+  "coverage": [
+    {
+      "confidence_at_least": 0.5,
+      "share_of_tickets": 0.9221,
+      "accuracy_on_those": 0.8888
+    },
+    {
+      "confidence_at_least": 0.6,
+      "share_of_tickets": 0.8643,
+      "accuracy_on_those": 0.9098
+    },
+    {
+      "confidence_at_least": 0.7,
+      "share_of_tickets": 0.8081,
+      "accuracy_on_those": 0.9269
+    },
+    {
+      "confidence_at_least": 0.8,
+      "share_of_tickets": 0.7406,
+      "accuracy_on_those": 0.9445
+    },
+    {
+      "confidence_at_least": 0.9,
+      "share_of_tickets": 0.6515,
+      "accuracy_on_those": 0.962
+    }
+  ],
+  "priority_mix_percent": {
+    "High": 10.1,
+    "Medium": 14.0,
+    "Low": 75.9
+  },
+  "tickets_matching_no_rule_percent": 61.5,
+  "rules_version": 3,
+  "review_done": true,
+  "review_results": {
+    "reviewed": 60,
+    "exact_agreement": 0.5833333333333334,
+    "within_one_level": 0.8833333333333333,
+    "serious_misses": 7
+  },
+  "versions": {
+    "python": "3.13.16",
+    "pandas": "2.3.3",
+    "numpy": "2.1.3",
+    "scikit_learn": "1.6.1",
+    "xgboost": "3.4.1"
+  },
+  "xgboost_device": "cuda"
+}

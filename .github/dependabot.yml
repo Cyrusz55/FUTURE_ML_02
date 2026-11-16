@@ -1,0 +1,20 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    # These versions must remain compatible with the serialized model artefact.
+    ignore:
+      - dependency-name: scikit-learn
+      - dependency-name: numpy
+      - dependency-name: scipy
+      - dependency-name: pandas
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

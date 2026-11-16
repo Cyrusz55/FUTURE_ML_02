@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: huggingface-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+      - name: Install dependencies
+        run: python -m pip install -r requirements_dev.txt
+      - name: Download and validate model
+        run: python -c "from apps.model_loader import get_model; assert get_model() is not None"
+      - name: Ruff
+        run: ruff check .
+      - name: Tests
+        run: pytest -q
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+      - name: Build and push image tags
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SHORT_SHA: ${{ github.sha }}
+        run: |
+          IMAGE_NAME="ghcr.io/$(printf '%s' "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          SHORT_SHA="${SHORT_SHA::7}"
+          docker buildx build \
+            --tag "$IMAGE_NAME:latest" \
+            --tag "$IMAGE_NAME:$SHORT_SHA" \
+            --push .
+      - name: Trigger Render deploy
+        run: curl --fail --silent --show-error --request POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+      - name: Wait for live health
+        env:
+          LIVE_URL: ${{ vars.LIVE_URL }}
+        run: |
+          test -n "$LIVE_URL"
+          for attempt in $(seq 1 48); do
+            status="$(curl --silent --output /tmp/health.json --write-out '%{http_code}' "$LIVE_URL/api/v1/health" || true)"
+            if [ "$status" = "200" ] && grep -q '"model_loaded":true' /tmp/health.json; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Live health check did not report a loaded model within 8 minutes."
+          cat /tmp/health.json 2>/dev/null || true
+          exit 1

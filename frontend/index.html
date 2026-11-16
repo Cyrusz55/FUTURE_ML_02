@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IT Ticket Classifier</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #60708a;
+      --accent: #2867d8;
+      --border: #d7dfec;
+      --high: #c83d42;
+      --medium: #b37a00;
+      --low: #27794d;
+    }
+    :root[data-theme="dark"] {
+      --bg: #101725;
+      --card: #182235;
+      --text: #edf3ff;
+      --muted: #aab8cf;
+      --accent: #79a8ff;
+      --border: #33425c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #101725;
+        --card: #182235;
+        --text: #edf3ff;
+        --muted: #aab8cf;
+        --accent: #79a8ff;
+        --border: #33425c;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.5 system-ui, sans-serif;
+    }
+    main { max-width: 860px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    header { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+    h1 { margin: 0 0 .4rem; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; margin-top: 1rem; }
+    textarea { width: 100%; min-height: 170px; resize: vertical; padding: .8rem; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); color: var(--text); font: inherit; }
+    button { border: 0; border-radius: 8px; padding: .65rem .9rem; background: var(--accent); color: white; cursor: pointer; font: inherit; }
+    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .actions, .examples { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .8rem; }
+    .examples button { font-size: .9rem; }
+    .muted, .counter { color: var(--muted); font-size: .9rem; }
+    .error { color: var(--high); min-height: 1.5rem; margin-top: .7rem; }
+    .result-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .confidence { height: 12px; background: var(--border); border-radius: 10px; overflow: hidden; }
+    .confidence span { display: block; height: 100%; background: var(--accent); }
+    .priority { display: inline-block; padding: .25rem .6rem; border-radius: 999px; font-weight: 700; }
+    .priority.High { color: var(--high); background: color-mix(in srgb, var(--high) 15%, transparent); }
+    .priority.Medium { color: var(--medium); background: color-mix(in srgb, var(--medium) 15%, transparent); }
+    .priority.Low { color: var(--low); background: color-mix(in srgb, var(--low) 15%, transparent); }
+    li { margin: .25rem 0; }
+    @media (max-width: 600px) {
+      header { display: block; }
+      .result-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>IT Ticket Classifier</h1>
+      <p class="muted">Classify a help desk ticket and review its rule-based priority.</p>
+    </div>
+    <button class="secondary" id="theme" type="button">Toggle theme</button>
+  </header>
+  <section class="card">
+    <label for="ticket"><strong>Ticket text</strong></label>
+    <textarea id="ticket" maxlength="5000" minlength="5" placeholder="Describe the issue..."></textarea>
+    <div class="counter"><span id="count">0</span>/5000 characters</div>
+    <div class="examples">
+      <button class="secondary example" type="button">Everyone is unable to access the office network; this is urgent.</button>
+      <button class="secondary example" type="button">My laptop is broken and crashes when I open the finance app.</button>
+      <button class="secondary example" type="button">How do I request access to a shared project folder?</button>
+    </div>
+    <div class="actions"><button id="classify" type="button">Classify ticket</button></div>
+    <div class="error" id="error" role="alert"></div>
+    <p class="muted">The model was trained on processed email style tickets from one help desk, so short handwritten sentences may be classified less reliably.</p>
+  </section>
+  <section class="card" id="result" hidden>
+    <div class="result-grid">
+      <div>
+        <h2 id="category"></h2>
+        <p>Calibrated confidence: <strong id="confidence"></strong></p>
+        <div class="confidence"><span id="confidence-bar"></span></div>
+        <h3>Top categories</h3>
+        <ol id="top"></ol>
+      </div>
+      <div>
+        <h2><span id="priority" class="priority"></span></h2>
+        <p><strong>Rule-based priority</strong> &middot; <span id="points"></span> points</p>
+        <h3>Matched rules</h3>
+        <ul id="rules"></ul>
+        <p class="muted">Priority rules agreed with a human reviewer on 58% of a 60-ticket sample; treat as a suggestion.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+  const ticket = document.querySelector("#ticket");
+  const count = document.querySelector("#count");
+  const error = document.querySelector("#error");
+  const result = document.querySelector("#result");
+  const setCount = () => { count.textContent = ticket.value.length; };
+  ticket.addEventListener("input", setCount);
+  document.querySelectorAll(".example").forEach((button) => {
+    button.addEventListener("click", () => { ticket.value = button.textContent; setCount(); ticket.focus(); });
+  });
+  document.querySelector("#theme").addEventListener("click", () => {
+    document.documentElement.dataset.theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  });
+  document.querySelector("#classify").addEventListener("click", async () => {
+    error.textContent = "";
+    result.hidden = true;
+    if (ticket.value.trim().length < 5) { error.textContent = "Enter at least 5 non-blank characters."; return; }
+    const button = document.querySelector("#classify");
+    button.disabled = true; button.textContent = "Classifying...";
+    try {
+      const response = await fetch("/api/v1/predict", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({text: ticket.value})
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "The API could not classify this ticket.");
+      document.querySelector("#category").textContent = data.category;
+      const confidence = (data.category_confidence * 100).toFixed(1);
+      document.querySelector("#confidence").textContent = `${confidence}%`;
+      document.querySelector("#confidence-bar").style.width = `${confidence}%`;
+      document.querySelector("#top").innerHTML = data.top_categories.map((item) =>
+        `<li>${item.category}: ${(item.probability * 100).toFixed(1)}%</li>`).join("");
+      const priority = document.querySelector("#priority");
+      priority.textContent = data.priority; priority.className = `priority ${data.priority}`;
+      document.querySelector("#points").textContent = data.priority_points;
+      document.querySelector("#rules").innerHTML = data.priority_rules_matched.length
+        ? data.priority_rules_matched.map((rule) => `<li>${rule}</li>`).join("")
+        : "<li>No urgency rules matched</li>";
+      result.hidden = false;
+    } catch (requestError) {
+      error.textContent = requestError.message;
+    } finally {
+      button.disabled = false; button.textContent = "Classify ticket";
+    }
+  });
+</script>
+</body>
+</html>
